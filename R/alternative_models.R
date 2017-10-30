@@ -14,6 +14,18 @@ SS_plots(ex1)
 # remake plot of data availability with larger scale
 SSplotData(ex1)
 
+
+dir.compare_devstart <- file.path(mydir, 'plots/compare_devstart')
+dir.create(dir.compare_devstart)
+
+# model with no early deviations
+ex_no_early <- SS_output(file.path(mydir, 'models/rockfish_example_no_early'))
+SSplotComparisons(SSsummarize(list(ex1, ex_no_early)), plot=FALSE, print=TRUE,
+                  legendlabels=c("recdevs start in 1895", "recdevs start in 1960"),
+                  plotdir=dir.compare_devstart)
+
+
+### create some new models with alternative recruitment setups
 dir.all_main <- file.path(mydir, 'models/rockfish_all_main')
 
 # get function to copy input files
@@ -155,46 +167,6 @@ for(i in seq(6,1,-1)){
 }
 dev.off()
 
-
-
-### profile over h for Shepard with c=1
-dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c1')
-# run SS_profile command
-profile <- SS_profile(dir=dir.prof, # directory
-                      model="ss",
-                      masterctlfile="rockfish_simplified_ctl.ss",
-                      newctlfile="rockfish_simplified_ctl.ss",
-                      string="steep",
-                      extras = "-nox -nohess",
-                      profilevec=h.vec)
-# read the output files (with names like Report1.sso, Report2.sso, etc.)
-profilemodels_c1 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
-
-### profile over h for Shepard with c=2
-dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c2')
-# run SS_profile command
-profile <- SS_profile(dir=dir.prof, # directory
-                      model="ss",
-                      masterctlfile="rockfish_simplified_ctl.ss",
-                      newctlfile="rockfish_simplified_ctl.ss",
-                      string="steep",
-                      extras = "-nox -nohess",
-                      profilevec=h.vec)
-# read the output files (with names like Report1.sso, Report2.sso, etc.)
-profilemodels_c2 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
-
-### profile over h for Shepard with c=.5
-dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c.5')
-# run SS_profile command
-profile <- SS_profile(dir=dir.prof, # directory
-                      model="ss",
-                      masterctlfile="rockfish_simplified_ctl.ss",
-                      newctlfile="rockfish_simplified_ctl.ss",
-                      string="steep",
-                      extras = "-nox -nohess",
-                      profilevec=h.vec)
-# read the output files (with names like Report1.sso, Report2.sso, etc.)
-profilemodels_c.5 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
 
 
 h_adj <- function(h, c){
