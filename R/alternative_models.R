@@ -51,7 +51,49 @@ SSplotComparisons(SSsummarize(list(ex2, ex3, ex.all_main2)))
 rs1 <- SS_output(file.path(mydir, 'models/rockfish_simplified'))
 
 
+### profile over sigmaR
+dir.prof <- file.path(mydir, 'models/rockfish_example_sigmaR_profile')
 
+# vector of values to profile over
+sig.vec <- seq(1, 0, -.1)
+Nprofile <- length(sig.vec)
+# run SS_profile command
+profile <- SS_profile(dir=dir.prof, # directory
+                      model="ss",
+                      masterctlfile="control.ss_new",
+                      newctlfile="control_modified.ss",
+                      string="SR_sigmaR",
+                      extras = "-nox -nohess",
+                      profilevec=sig.vec)
+
+# read the output files (with names like Report1.sso, Report2.sso, etc.)
+profilemodels <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
+# replace final 2 models with manually run cases
+profilemodels[[10]] <- SS_output(file.path(mydir,
+                   'models/rockfish_example_sigmaR_0.1'))
+profilemodels[[11]] <- SS_output(file.path(mydir,
+                   'models/rockfish_example_sigmaR_0.01'))
+profilesummary <- SSsummarize(profilemodels)
+
+# plot sigmaR profile likelihood
+SSplotProfile(profilesummary, profile.string="SR_sigmaR", legendloc='right',
+              print=TRUE, plotdir=file.path(mydir, 'plots'),
+              profile.label=expression(paste("Recruit deviation variability parameter: ",
+                  sigma[italic(R)])))
+recdev.sd.vec <- 0*sig.vec
+for(i in 1:length(sig.vec)){
+  recdev.sd.vec[i] <- profilemodels[[i]]$sigma_R_info$SD_of_devs[1]
+}
+
+# plot showing variability of recdevs as a function of sigmaR 
+png(file.path(mydir, "plots/sigmaR_vs_recdev_variability.png"),
+    width=6.5, height=5, pointsize=10, units='in', res=200, bg="transparent")
+plot(sig.vec, recdev.sd.vec, lwd=4, col=rgb(0,0,1,.7), type='o', xaxs='i', yaxs='i',
+     xlim=c(0,1.05), ylim=c(0,.6), las=1,
+     xlab=expression(paste("Recruit deviation variability parameter: ", sigma[italic(R)])),
+     ylab="S.D of 'main' recdevs (1960-2012)")
+abline(0,1, lty=3)
+dev.off()
 
 ### profile over h for B-H model
 dir.prof <- file.path(mydir, 'models/rockfish_simplified_BH_steep_profile')
@@ -85,6 +127,36 @@ for(i in seq(1,9,2)){
 }
 dev.off()
 
+
+### profile over Shepherd c with h = 0.6
+dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_h.6')
+c.vec <- seq(.4,1.6,.2)
+profile <- SS_profile(dir=dir.prof, # directory
+                      model="ss",
+                      masterctlfile="rockfish_simplified_ctl.ss",
+                      newctlfile="rockfish_simplified_ctl.ss",
+                      string="SR_Shepard_c",
+                      extras = "-nox -nohess",
+                      profilevec=c.vec)
+profilemodels_Shep_h.6 <- SSgetoutput(dirvec=dir.prof,
+                                      keyvec=1:Nprofile, getcovar=FALSE)
+# plot of Shepherd stock-recruit curves
+png(file.path(mydir, "plots/Stock-recruit-curves_Shep.png"),
+    width=5, height=5, pointsize=12, units='in', res=200, bg="transparent")
+par(mar=c(4.1,4.1,1,1), las=1)
+col.vec <- rich.colors.short(6)
+for(i in seq(6,1,-1)){
+  SSplotSpawnrecruit(profilemodels_Shep_h.6[[i]], subplot=1, add=i!=6,
+                     colvec=c(NA, NA, col.vec[i], NA),
+                     legend=FALSE, bias_adjusted=FALSE, estimated=FALSE,
+                     relative=TRUE, init=FALSE, virg=FALSE)
+  text(0.2, h_adj(h=.6, c=c.vec[i]), paste0("c=",c.vec[i]),
+       col=col.vec[i], adj=c(0,1))
+}
+dev.off()
+
+
+
 ### profile over h for Shepard with c=1
 dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c1')
 # run SS_profile command
@@ -98,7 +170,7 @@ profile <- SS_profile(dir=dir.prof, # directory
 # read the output files (with names like Report1.sso, Report2.sso, etc.)
 profilemodels_c1 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
 
-### profile over h for Shepard with c=1
+### profile over h for Shepard with c=2
 dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c2')
 # run SS_profile command
 profile <- SS_profile(dir=dir.prof, # directory
@@ -111,7 +183,7 @@ profile <- SS_profile(dir=dir.prof, # directory
 # read the output files (with names like Report1.sso, Report2.sso, etc.)
 profilemodels_c2 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
 
-### profile over h for Shepard with c=1
+### profile over h for Shepard with c=.5
 dir.prof <- file.path(mydir, 'models/rockfish_simplified_Shep_c.5')
 # run SS_profile command
 profile <- SS_profile(dir=dir.prof, # directory
@@ -123,6 +195,7 @@ profile <- SS_profile(dir=dir.prof, # directory
                       profilevec=h.vec)
 # read the output files (with names like Report1.sso, Report2.sso, etc.)
 profilemodels_c.5 <- SSgetoutput(dirvec=dir.prof, keyvec=1:Nprofile, getcovar=FALSE)
+
 
 h_adj <- function(h, c){
   # calculation of adjusted h for Shepherd stock-recruit curve
